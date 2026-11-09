@@ -1,0 +1,118 @@
+# =============================================================================
+# Variáveis de ambiente e segredos
+# =============================================================================
+.env
+.env.*
+!.env.example
+
+# =============================================================================
+# Dados científicos, estruturas, gravações de sensores, checkpoints e saídas
+# NUNCA commitar datasets reais, estruturas ou dados de pacientes!
+# =============================================================================
+data/
+**/data/
+outputs/
+**/outputs/
+runs/
+**/runs/
+cache/
+**/cache/
+.cache/
+**/.cache/
+checkpoints/
+**/checkpoints/
+artifacts/
+**/artifacts/
+
+# Formatos tabulares e científicos
+*.csv
+*.tsv
+*.parquet
+*.feather
+*.arrow
+*.h5
+*.hdf5
+*.mat
+*.npz
+*.npy
+*.pkl
+*.pickle
+*.joblib
+
+# Estruturas biomoleculares e trajetórias (Módulo A)
+*.pdb
+*.pdbqt
+*.cif
+*.mmcif
+*.mol2
+*.sdf
+*.gro
+*.xtc
+*.trr
+*.tpr
+*.edr
+*.top
+*.itp
+*.fasta
+*.fa
+
+# Pesos de modelos e experimentos (Módulo B)
+*.pt
+*.pth
+*.onnx
+*.ckpt
+*.safetensors
+wandb/
+mlruns/
+lightning_logs/
+runs_tb/
+
+# =============================================================================
+# Python / uv / pytest / mypy / ruff
+# =============================================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+env/
+*.egg-info/
+.installed.cfg
+*.egg
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# =============================================================================
+# Node / pnpm / Next.js / TypeScript
+# =============================================================================
+node_modules/
+.pnp
+.pnp.js
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+.vercel
+.turbo
+
+# =============================================================================
+# Sistema operacional e IDEs
+# =============================================================================
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+*.log
