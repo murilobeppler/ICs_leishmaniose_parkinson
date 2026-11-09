@@ -1,0 +1,47 @@
+[build-system]
+requires = ["hatchling>=1.25.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ic-core"
+version = "0.1.0"
+description = "Infraestrutura compartilhada enxuta para o monorepo ic-research-lab (config, logging, paths, io/cache)"
+requires-python = ">=3.11"
+dependencies = [
+    "pydantic>=2.9.0",
+    "pydantic-settings>=2.6.0",
+    "pandas>=2.2.0",
+    "pyarrow>=17.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.0",
+    "ruff>=0.8.0",
+    "mypy>=1.13.0",
+    "pandas-stubs>=2.2.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ic_core"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+mypy_path = "src"
+packages = ["ic_core"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-ra -q"
