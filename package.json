@@ -1,0 +1,32 @@
+{
+  "name": "ic-research-lab",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Monorepo de iniciações científicas independentes: peptide-docking (Módulo A) e fog-gnn (Módulo B)",
+  "packageManager": "pnpm@9.15.4",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "dev:front:a": "pnpm --filter @ic-research-lab/peptide-docking-frontend dev",
+    "dev:front:b": "pnpm --filter @ic-research-lab/fog-gnn-frontend dev",
+    "build": "pnpm -r build",
+    "build:a": "pnpm --filter @ic-research-lab/peptide-docking-frontend build",
+    "build:b": "pnpm --filter @ic-research-lab/fog-gnn-frontend build",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "format": "prettier --write \"modules/*/frontend/**/*.{ts,tsx,js,jsx,json,css,md}\" \"*.{json,md,yaml,yml}\" \"docs/**/*.md\"",
+    "format:check": "prettier --check \"modules/*/frontend/**/*.{ts,tsx,js,jsx,json,css,md}\" \"*.{json,md,yaml,yml}\" \"docs/**/*.md\""
+  },
+  "devDependencies": {
+    "prettier": "^3.4.2",
+    "typescript": "^5.7.2"
+  },
+  "prettier": {
+    "semi": true,
+    "singleQuote": false,
+    "tabWidth": 2,
+    "trailingComma": "all",
+    "printWidth": 100
+  }
+}
