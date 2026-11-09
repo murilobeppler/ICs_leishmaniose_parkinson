@@ -1,0 +1,54 @@
+[build-system]
+requires = ["hatchling>=1.25.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "peptide-docking"
+version = "0.1.0"
+description = "Módulo A: Triagem computacional automatizada de 634 peptídeos contra proteína-alvo de Leishmania sem ortólogo humano"
+requires-python = ">=3.11"
+dependencies = [
+    "ic-core",
+    "pydantic>=2.9.0",
+    "pydantic-settings>=2.6.0",
+    "pandas>=2.2.0",
+    "pyarrow>=17.0.0",
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "httpx>=0.27.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.0",
+    "ruff>=0.8.0",
+    "mypy>=1.13.0",
+    "pandas-stubs>=2.2.0",
+]
+
+[tool.uv.sources]
+ic-core = { path = "../../../packages/core", editable = true }
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/peptide_docking"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests", "scripts"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+mypy_path = "src"
+packages = ["peptide_docking"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-ra -q"
