@@ -7,3 +7,4 @@ Open-source PyMOL is available under its open-source license.
 Commercial, educational, and evaluation builds are available under license from Schrödinger.
 For license terms, commercial options, and documentation, visit:
 https://www.pymol.org/
+

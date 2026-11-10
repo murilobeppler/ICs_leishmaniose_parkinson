@@ -9,3 +9,4 @@ __all__ = [
     "export_pymol_script_file",
     "generate_pymol_script",
 ]
+
