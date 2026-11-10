@@ -1,0 +1,142 @@
+name: CI — ic-research-lab
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    name: Detect Changed Paths
+    runs-on: ubuntu-latest
+    outputs:
+      core: ${{ steps.filter.outputs.core }}
+      peptide_backend: ${{ steps.filter.outputs.peptide_backend }}
+      peptide_frontend: ${{ steps.filter.outputs.peptide_frontend }}
+      fog_backend: ${{ steps.filter.outputs.fog_backend }}
+      fog_frontend: ${{ steps.filter.outputs.fog_frontend }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            core:
+              - 'packages/core/**'
+              - '.github/workflows/ci.yml'
+              - 'pyproject.toml'
+            peptide_backend:
+              - 'packages/core/**'
+              - 'modules/peptide-docking/backend/**'
+              - '.github/workflows/ci.yml'
+            peptide_frontend:
+              - 'modules/peptide-docking/frontend/**'
+              - 'package.json'
+              - 'pnpm-workspace.yaml'
+              - '.github/workflows/ci.yml'
+            fog_backend:
+              - 'packages/core/**'
+              - 'modules/fog-gnn/backend/**'
+              - '.github/workflows/ci.yml'
+            fog_frontend:
+              - 'modules/fog-gnn/frontend/**'
+              - 'package.json'
+              - 'pnpm-workspace.yaml'
+              - '.github/workflows/ci.yml'
+
+  core-check:
+    name: ic-core (Python lint, mypy & tests)
+    needs: changes
+    if: ${{ needs.changes.outputs.core == 'true' || github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+      - name: Setup Python
+        run: uv python install 3.12
+      - name: Sync dependencies
+        run: cd packages/core && uv sync --extra dev
+      - name: Ruff Check & Format
+        run: cd packages/core && uv run ruff check . && uv run ruff format --check .
+      - name: Mypy Strict Typecheck
+        run: cd packages/core && uv run mypy src tests
+      - name: Run Pytest
+        run: cd packages/core && uv run pytest -v
+
+  peptide-backend-check:
+    name: peptide-docking backend (Python lint, mypy & tests)
+    needs: changes
+    if: ${{ needs.changes.outputs.peptide_backend == 'true' || github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+      - name: Setup Python
+        run: uv python install 3.12
+      - name: Sync dependencies
+        run: cd modules/peptide-docking/backend && uv sync --extra dev
+      - name: Ruff Check & Format
+        run: cd modules/peptide-docking/backend && uv run ruff check . && uv run ruff format --check .
+      - name: Mypy Strict Typecheck
+        run: cd modules/peptide-docking/backend && uv run mypy src tests scripts
+      - name: Run Pytest
+        run: cd modules/peptide-docking/backend && uv run pytest -v
+
+  fog-backend-check:
+    name: fog-gnn backend (Python lint, mypy & tests)
+    needs: changes
+    if: ${{ needs.changes.outputs.fog_backend == 'true' || github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+    steps:
+      - actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+      - name: Setup Python
+        run: uv python install 3.12
+      - name: Sync dependencies
+        run: cd modules/fog-gnn/backend && uv sync --extra dev
+      - name: Ruff Check & Format
+        run: cd modules/fog-gnn/backend && uv run ruff check . && uv run ruff format --check .
+      - name: Mypy Strict Typecheck
+        run: cd modules/fog-gnn/backend && uv run mypy src tests scripts
+      - name: Run Pytest
+        run: cd modules/fog-gnn/backend && uv run pytest -v
+
+  frontend-matrix-check:
+    name: Frontends (Lint, Typecheck & Next.js Build)
+    needs: changes
+    strategy:
+      fail-fast: false
+      matrix:
+        module:
+          - { name: 'peptide-docking', filter: '@ic-research-lab/peptide-docking-frontend' }
+          - { name: 'fog-gnn', filter: '@ic-research-lab/fog-gnn-frontend' }
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 9.15.4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Typecheck
+        run: pnpm --filter ${{ matrix.module.filter }} typecheck
+      - name: Build
+        run: pnpm --filter ${{ matrix.module.filter }} build

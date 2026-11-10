@@ -51,9 +51,9 @@ setup-env:
 	@if [ ! -f .env ]; then cp .env.example .env && echo "[OK] .env criado a partir de .env.example"; fi
 
 setup-python:
-	cd $(CORE_DIR) && uv sync --all-extras
-	cd $(MOD_A_BACK) && uv sync --all-extras
-	cd $(MOD_B_BACK) && uv sync --all-extras
+	cd $(CORE_DIR) && uv sync --extra dev
+	cd $(MOD_A_BACK) && uv sync --extra dev
+	cd $(MOD_B_BACK) && uv sync --extra dev
 
 setup-js:
 	pnpm install
@@ -130,3 +130,4 @@ dev-b:
 
 clean:
 	find . -type d \( -name ".pytest_cache" -o -name ".mypy_cache" -o -name ".ruff_cache" -o -name "__pycache__" -o -name ".next" \) -prune -exec rm -rf {} +
+

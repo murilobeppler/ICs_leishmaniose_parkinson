@@ -7,9 +7,12 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from fastapi.testclient import TestClient
 from ic_core.paths import find_repo_root
 from pydantic import ValidationError
 
+from peptide_docking.api import create_app
+from peptide_docking.config import PeptideDockingSettings
 from peptide_docking.domain import (
     EXPECTED_LIBRARY_SIZE,
     HYPOTHESIS_DISCLAIMER,
@@ -288,6 +291,41 @@ def test_ranking_filtering_and_summary(tmp_path: Path) -> None:
     assert summary.filtered_count == len(filtered)
     assert len(summary.residue_hotspots) > 0
     assert summary.hypothesis_disclaimer == HYPOTHESIS_DISCLAIMER
+
+
+def test_fastapi_endpoints_on_synthetic_data(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("PEPTIDE_LIBRARY_PATH", str(tmp_path / "peptides_634.parquet"))
+    monkeypatch.setenv("PEPTIDE_TARGET_PATH", str(tmp_path / "target.json"))
+    monkeypatch.setenv("PEPTIDE_RUNS_DIR", str(tmp_path / "runs"))
+    monkeypatch.setenv("IC_CACHE_DIR", str(tmp_path / "cache"))
+
+    settings = PeptideDockingSettings()
+    client = TestClient(create_app(settings))
+
+    health = client.get("/health")
+    assert health.status_code == 200
+    assert health.json()["library_size"] == 634
+    assert health.json()["has_human_ortholog"] is False
+
+    pep_resp = client.get("/peptides?limit=15&min_charge=1.0")
+    assert pep_resp.status_code == 200
+    pep_data = pep_resp.json()
+    assert pep_data["total_library_size"] == 634
+    assert len(pep_data["items"]) <= 15
+
+    runs_resp = client.get("/runs")
+    assert runs_resp.status_code == 200
+    assert len(runs_resp.json()) >= 1
+
+    res_resp = client.get("/results?top_k=10")
+    assert res_resp.status_code == 200
+    res_data = res_resp.json()
+    assert res_data["summary"]["total_evaluated"] == 634
+    assert len(res_data["candidates"]) == 10
+    assert "hipótese computacional" in res_data["hypothesis_disclaimer"]
 
 
 def test_module_a_never_imports_module_b() -> None:

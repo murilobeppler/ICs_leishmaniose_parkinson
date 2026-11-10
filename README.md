@@ -9,22 +9,24 @@ Monorepo que abriga **duas iniciações científicas independentes**, cada uma c
 ## Os Dois Módulos
 
 ### Módulo A — `peptide-docking`
-**Descoberta computacional de candidatos peptídicos contra proteína-alvo de *Leishmania* sem ortólogo humano**
 
-- **Problema:** Triar de forma reprodutível **634 peptídeos candidatos** contra uma proteína-alvo de *Leishmania* ausente no proteoma humano (reduzindo risco de toxicidade *off-target*), superando o gargalo de submissão manual em lotes de 10 no servidor web HPEPDOCK.
+**Descoberta computacional de candidatos peptídicos contra proteína-alvo de _Leishmania_ sem ortólogo humano**
+
+- **Problema:** Triar de forma reprodutível **634 peptídeos candidatos** contra uma proteína-alvo de _Leishmania_ ausente no proteoma humano (reduzindo risco de toxicidade _off-target_), superando o gargalo de submissão manual em lotes de 10 no servidor web HPEPDOCK.
 - **Arquitetura:**
   - Biblioteca versionada e validada (`Peptide`, `Target`, `DockingJob`, `DockingResult`).
-  - Abstração de motores de docking (`DockingEngine` Protocol) com motor determinístico (`MockDockingEngine`), adaptador `HPEPDOCKEngine` (com *rate limiting*, *retry*, cache em disco e proteção explícita dos termos de serviço/modo stub) e espaço aberto para motores locais open-source.
+  - Abstração de motores de docking (`DockingEngine` Protocol) com motor determinístico (`MockDockingEngine`), adaptador `HPEPDOCKEngine` (com _rate limiting_, _retry_, cache em disco e proteção explícita dos termos de serviço/modo stub) e espaço aberto para motores locais open-source.
   - Pipeline em lote retomável e idempotente, persistindo todos os hiperparâmetros e sementes junto aos resultados.
-  - Sistema de *ranking* e filtragem que trata o score de docking com **honestidade científica**: como **hipótese de triagem in silico**, nunca como confirmação de atividade biológica.
+  - Sistema de _ranking_ e filtragem que trata o score de docking com **honestidade científica**: como **hipótese de triagem in silico**, nunca como confirmação de atividade biológica.
   - **API (FastAPI)** em `:8001` (`/peptides`, `/runs`, `/results`) + **Frontend (Next.js)** em `:3001`.
 
 ### Módulo B — `fog-gnn`
-**Predição de episódios de *Freezing of Gait* (FOG) na Doença de Parkinson com Redes Neurais em Grafos Espaço-Temporais**
 
-- **Problema:** Detectar e predizer episódios de congelamento da marcha (*freezing of gait*) a partir de sensores inerciais corporais (IMU), modelando o corpo humano como um **grafo** (nós = segmentos corporais/sensores, arestas = conexões biomecânicas anatômicas + correlação funcional dinâmica de sinal) com arquitetura preparada para fusão multimodal futura (ex.: EEG/sinal cerebral).
+**Predição de episódios de _Freezing of Gait_ (FOG) na Doença de Parkinson com Redes Neurais em Grafos Espaço-Temporais**
+
+- **Problema:** Detectar e predizer episódios de congelamento da marcha (_freezing of gait_) a partir de sensores inerciais corporais (IMU), modelando o corpo humano como um **grafo** (nós = segmentos corporais/sensores, arestas = conexões biomecânicas anatômicas + correlação funcional dinâmica de sinal) com arquitetura preparada para fusão multimodal futura (ex.: EEG/sinal cerebral).
 - **Rigor Metodológico:**
-  - **Split estritamente por sujeito** (*Leave-One-Subject-Out* / agrupado por paciente, **nunca** por janela temporal aleatória) para impedir vazamento de dados (*data leakage*) entre janelas adjacentes do mesmo indivíduo.
+  - **Split estritamente por sujeito** (_Leave-One-Subject-Out_ / agrupado por paciente, **nunca** por janela temporal aleatória) para impedir vazamento de dados (_data leakage_) entre janelas adjacentes do mesmo indivíduo.
   - **Comparação honesta:** A GNN espaço-temporal (`STGNNModel`) é obrigatoriamente comparada contra um baseline não-GNN 1D (`TemporalBaselineModel` — CNN/GRU sobre janelas multivariadas).
   - **Métricas para classe rara:** Avaliação focada em **AUPRC** (Área sob a curva Precisão-Revocação), **Sensibilidade (Recall) a uma taxa fixa de Falsos Positivos por hora (FP/h)** e **latência de detecção**, evitando a ilusão de acurácia inflada pela classe majoritária.
   - **Privacidade de pacientes:** Nenhum dado real ou identificador pessoal entra no repositório ou nos logs.
@@ -98,6 +100,7 @@ make lint
 ```bash
 make dev-a
 ```
+
 - **API FastAPI (Módulo A):** `http://127.0.0.1:8001` (docs interativos em `/docs`)
 - **Frontend Next.js (Módulo A):** `http://localhost:3001`
 
@@ -106,6 +109,7 @@ make dev-a
 ```bash
 make dev-b
 ```
+
 - **API FastAPI (Módulo B):** `http://127.0.0.1:8002` (docs interativos em `/docs`)
 - **Frontend Next.js (Módulo B):** `http://localhost:3002`
 

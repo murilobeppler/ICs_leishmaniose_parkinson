@@ -1,0 +1,31 @@
+# Pre-commit configuration for ic-research-lab
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-added-large-files
+        args: ["--maxkb=500"]
+
+  - repo: local
+    hooks:
+      - id: boundary-check
+        name: Monorepo Boundary Architecture Guard
+        entry: uv run --directory packages/core pytest tests/test_architecture_boundaries.py
+        language: system
+        pass_filenames: false
+
+      - id: ruff-check
+        name: Ruff Check (Python)
+        entry: uv run --directory packages/core ruff check packages/core modules/peptide-docking/backend modules/fog-gnn/backend
+        language: system
+        pass_filenames: false
+
+      - id: prettier-check
+        name: Prettier Format Check
+        entry: pnpm run format:check
+        language: system
+        pass_filenames: false
