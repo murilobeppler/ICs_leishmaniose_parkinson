@@ -133,4 +133,3 @@ class TemporalBaselineModel:
         h1 = np.maximum(0.0, x_norm @ self._w1 + self._b1)
         logits = h1 @ self._w2 + self._b2
         return sigmoid(logits)
-

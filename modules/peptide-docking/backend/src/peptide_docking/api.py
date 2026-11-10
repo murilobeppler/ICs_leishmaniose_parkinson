@@ -6,6 +6,7 @@ from typing import Any
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, ConfigDict, Field
 
 from peptide_docking.config import EngineChoice, PeptideDockingSettings
@@ -40,6 +41,7 @@ from peptide_docking.ranking import (
     rank_docking_results,
     summarize_run_ranking,
 )
+from peptide_docking.visualization.pymol_export import generate_pymol_script
 
 DEFAULT_BASELINE_RUN_ID: str = "run_baseline_mock_seed42"
 
@@ -292,8 +294,62 @@ def create_app(settings: PeptideDockingSettings | None = None) -> FastAPI:
             candidates=ranked,
         )
 
+    @app.get("/results/{run_id}/{peptide_id}/pymol")
+    def get_pymol_script(
+        run_id: str,
+        peptide_id: str,
+        pose_rank: int = Query(default=1, ge=1),
+        download: bool = Query(default=False),
+    ) -> Any:
+        peptides, target, manifests = ensure_module_a_data(cfg)
+        runs_dir = cfg.resolved_runs_dir(create=True)
+
+        selected_run_id = manifests[0].run_id if run_id in ("latest", "default") else run_id
+        try:
+            raw_results = load_run_results(runs_dir, selected_run_id)
+        except FileNotFoundError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+        matched_res = next(
+            (r for r in raw_results if r.peptide_id.upper() == peptide_id.upper()), None
+        )
+        if matched_res is None:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Peptídeo '{peptide_id}' não encontrado na run '{selected_run_id}'.",
+            )
+
+        matched_pep = next(
+            (p for p in peptides if p.peptide_id.upper() == peptide_id.upper()), None
+        )
+        if matched_pep is None:
+            raise HTTPException(
+                status_code=404, detail=f"Metadados de '{peptide_id}' não encontrados."
+            )
+
+        target_pose = next(
+            (p for p in matched_res.poses if p.pose_rank == pose_rank), matched_res.poses[0]
+        )
+        script_text = generate_pymol_script(matched_pep, target, target_pose)
+
+        if download:
+            filename = f"{matched_pep.peptide_id}_pose{target_pose.pose_rank}_pymol.pml"
+            return PlainTextResponse(
+                script_text,
+                media_type="text/plain; charset=utf-8",
+                headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+            )
+
+        return {
+            "peptide_id": matched_pep.peptide_id,
+            "target_id": target.target_id,
+            "pose_rank": target_pose.pose_rank,
+            "docking_score": target_pose.docking_score,
+            "script": script_text,
+            "disclaimer": HYPOTHESIS_DISCLAIMER,
+        }
+
     return app
 
 
 app = create_app()
-

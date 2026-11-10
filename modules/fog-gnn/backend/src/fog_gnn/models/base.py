@@ -72,4 +72,3 @@ class FogModel(Protocol):
     ) -> np.ndarray:
         """Retorna a probabilidade predita de FOG `P(y=1|x)` para cada janela."""
         ...
-

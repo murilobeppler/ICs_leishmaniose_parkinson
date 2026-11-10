@@ -327,6 +327,22 @@ def test_fastapi_endpoints_on_synthetic_data(
     assert len(res_data["candidates"]) == 10
     assert "hipótese computacional" in res_data["hypothesis_disclaimer"]
 
+    # Test PyMOL export endpoint
+    first_pep_id = res_data["candidates"][0]["peptide"]["peptide_id"]
+    first_run_id = res_data["manifest"]["run_id"]
+    pymol_resp = client.get(f"/results/{first_run_id}/{first_pep_id}/pymol")
+    assert pymol_resp.status_code == 200
+    pymol_data = pymol_resp.json()
+    assert "reinitialize" in pymol_data["script"]
+    assert "cat_res" in pymol_data["script"]
+    assert "zoom" in pymol_data["script"]
+
+    # Test PyMOL script download attachment
+    dl_resp = client.get(f"/results/{first_run_id}/{first_pep_id}/pymol?download=true")
+    assert dl_resp.status_code == 200
+    assert "attachment" in dl_resp.headers.get("Content-Disposition", "")
+    assert dl_resp.text.startswith("# ===")
+
 
 def test_module_a_never_imports_module_b() -> None:
     repo_root = find_repo_root()

@@ -6,4 +6,3 @@ from fog_gnn.synthetic import generate_synthetic_imu_artifacts
 
 if __name__ == "__main__":
     generate_synthetic_imu_artifacts()
-

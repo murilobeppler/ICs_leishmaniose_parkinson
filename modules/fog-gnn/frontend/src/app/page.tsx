@@ -7,12 +7,13 @@ import {
   GraphResponse,
   SubjectSummaryItem,
   SubjectFoldReport,
+  ModelInfoResponse,
 } from "../types";
 import { BodyGraphViewer } from "../components/BodyGraphViewer";
 import { MetricsComparisonCard } from "../components/MetricsComparisonCard";
 import { TimeSeriesViewer } from "../components/TimeSeriesViewer";
 import { SubjectOverviewList } from "../components/SubjectOverviewList";
-import { Activity, RefreshCw, AlertCircle, ShieldAlert, Network, UserCheck } from "lucide-react";
+import { Activity, RefreshCw, AlertCircle, ShieldAlert, Network, UserCheck, Cpu, GitFork } from "lucide-react";
 
 const API_BASE = process.env.NEXT_PUBLIC_FOG_API_URL || "http://127.0.0.1:8002";
 
@@ -20,6 +21,7 @@ export default function FogGnnPage() {
   const [subjectsData, setSubjectsData] = useState<SubjectsResponse | null>(null);
   const [metricsData, setMetricsData] = useState<MetricsResponse | null>(null);
   const [graphData, setGraphData] = useState<GraphResponse | null>(null);
+  const [modelInfo, setModelInfo] = useState<ModelInfoResponse | null>(null);
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>("SUBJ_001");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -28,10 +30,11 @@ export default function FogGnnPage() {
     setLoading(true);
     setError(null);
     try {
-      const [subjRes, metRes, graphRes] = await Promise.all([
+      const [subjRes, metRes, graphRes, modelRes] = await Promise.all([
         fetch(`${API_BASE}/subjects`, { cache: "no-store" }),
         fetch(`${API_BASE}/metrics`, { cache: "no-store" }),
         fetch(`${API_BASE}/graph`, { cache: "no-store" }),
+        fetch(`${API_BASE}/model-info`, { cache: "no-store" }).catch(() => null),
       ]);
 
       if (!subjRes.ok || !metRes.ok || !graphRes.ok) {
@@ -43,6 +46,11 @@ export default function FogGnnPage() {
         metRes.json(),
         graphRes.json(),
       ]);
+
+      if (modelRes && modelRes.ok) {
+        const modelJson = await modelRes.json();
+        setModelInfo(modelJson);
+      }
 
       setSubjectsData(subjJson);
       setMetricsData(metJson);
@@ -140,7 +148,7 @@ export default function FogGnnPage() {
           border: "1px solid rgba(139, 92, 246, 0.35)",
           borderRadius: "0.625rem",
           padding: "0.85rem 1.2rem",
-          marginBottom: "1.5rem",
+          marginBottom: "1rem",
           display: "flex",
           alignItems: "center",
           gap: "0.85rem",
@@ -157,6 +165,72 @@ export default function FogGnnPage() {
           classe rara. Todos os dados são 100% anonimizados (<code>SUBJ_XXX</code>).
         </div>
       </section>
+
+      {/* GNN & PyTorch Geometric Engine Banner */}
+      {modelInfo && (
+        <section
+          style={{
+            background: "rgba(15, 23, 42, 0.65)",
+            border: "1px solid rgba(59, 130, 246, 0.35)",
+            borderRadius: "0.625rem",
+            padding: "0.75rem 1.2rem",
+            marginBottom: "1.5rem",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: "0.8rem",
+            fontSize: "0.825rem",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+            <Cpu size={18} style={{ color: "var(--accent-cyan)" }} />
+            <span>
+              <strong>Motor GNN:</strong>{" "}
+              <code
+                style={{
+                  background: "rgba(59, 130, 246, 0.2)",
+                  padding: "0.15rem 0.45rem",
+                  borderRadius: "0.3rem",
+                  color: "#93c5fd",
+                }}
+              >
+                {modelInfo.backend}
+              </code>
+            </span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <span
+              style={{
+                fontSize: "0.75rem",
+                padding: "0.2rem 0.55rem",
+                borderRadius: "9999px",
+                background: modelInfo.pyg_available
+                  ? "rgba(16, 185, 129, 0.2)"
+                  : "rgba(139, 92, 246, 0.2)",
+                color: modelInfo.pyg_available ? "#6ee7b7" : "#c4b5fd",
+                border: `1px solid ${
+                  modelInfo.pyg_available ? "rgba(16, 185, 129, 0.4)" : "rgba(139, 92, 246, 0.4)"
+                }`,
+                fontWeight: 600,
+              }}
+            >
+              {modelInfo.pyg_available ? "● PyTorch Geometric Ativo" : "● GNN Motor Analítico Vetorizado"}
+            </span>
+            <span
+              style={{
+                fontSize: "0.75rem",
+                padding: "0.2rem 0.55rem",
+                borderRadius: "9999px",
+                background: "rgba(148, 163, 184, 0.15)",
+                color: "#cbd5e1",
+              }}
+            >
+              {modelInfo.sensor_nodes_count} Nós IMU Corporais
+            </span>
+          </div>
+        </section>
+      )}
 
       {/* Error state */}
       {error && (

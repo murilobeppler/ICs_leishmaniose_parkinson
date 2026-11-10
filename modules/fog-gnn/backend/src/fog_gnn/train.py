@@ -269,4 +269,3 @@ def load_experiment(experiments_dir: Path, experiment_id: str) -> ExperimentResu
     if not target.exists():
         raise FileNotFoundError(f"Experimento '{experiment_id}' não encontrado em {target}")
     return ExperimentResult.model_validate(read_json(target))
-

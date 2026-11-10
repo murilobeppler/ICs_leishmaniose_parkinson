@@ -202,4 +202,3 @@ def leave_one_subject_out_splits(windows: Sequence[Window]) -> list[SubjectSplit
             f"LOSO requer pelo menos 2 sujeitos distintos, encontrado(s): {all_subjects}"
         )
     return [split_by_subject(windows, [subj_id]) for subj_id in all_subjects]
-

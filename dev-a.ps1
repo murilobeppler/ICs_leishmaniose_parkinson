@@ -1,4 +1,4 @@
-﻿# Inicia Módulo A (peptide-docking): FastAPI (:8001) + Next.js (:3001)
+# Inicia Módulo A (peptide-docking): FastAPI (:8001) + Next.js (:3001)
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 Write-Host "[Módulo A] Garantindo dados sintéticos..." -ForegroundColor Cyan

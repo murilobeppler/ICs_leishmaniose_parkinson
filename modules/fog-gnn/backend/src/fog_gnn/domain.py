@@ -232,4 +232,3 @@ class Window(BaseModel):
                 "Todos os nós em `node_features` devem ter vetores de mesmo tamanho > 0."
             )
         return self
-

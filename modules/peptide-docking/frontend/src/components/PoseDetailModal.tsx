@@ -1,16 +1,22 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { RankedCandidate, PoseContact } from "../types";
-import { X, ShieldAlert, Award, Layers, Sparkles } from "lucide-react";
+import { X, ShieldAlert, Award, Layers, Sparkles, Download, Code, Check } from "lucide-react";
 
 interface PoseDetailModalProps {
   candidate: RankedCandidate | null;
   onClose: () => void;
 }
 
+const API_BASE = process.env.NEXT_PUBLIC_PEPTIDE_API_URL || "http://127.0.0.1:8001";
+
 export function PoseDetailModal({ candidate, onClose }: PoseDetailModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const [showPymolCode, setShowPymolCode] = useState(false);
+  const [pymolScript, setPymolScript] = useState<string>("");
+  const [copied, setCopied] = useState(false);
+  const [loadingScript, setLoadingScript] = useState(false);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -20,10 +26,28 @@ export function PoseDetailModal({ candidate, onClose }: PoseDetailModalProps) {
       if (!dialog.open) {
         dialog.showModal();
       }
+      setShowPymolCode(false);
+      setCopied(false);
+      // Fetch PyMOL script preview
+      setLoadingScript(true);
+      fetch(`${API_BASE}/results/${candidate.result.run_id}/${candidate.peptide.peptide_id}/pymol`)
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.script) setPymolScript(data.script);
+        })
+        .catch(() => {})
+        .finally(() => setLoadingScript(false));
     } else if (dialog.open) {
       dialog.close();
     }
   }, [candidate]);
+
+  const handleCopyScript = () => {
+    if (!pymolScript) return;
+    navigator.clipboard.writeText(pymolScript);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   if (!candidate) return null;
 
@@ -305,6 +329,72 @@ export function PoseDetailModal({ candidate, onClose }: PoseDetailModalProps) {
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* PyMOL Visualization & Export Section */}
+        <div style={{ marginTop: "1.25rem", padding: "1rem", background: "rgba(6, 182, 212, 0.08)", border: "1px solid rgba(6, 182, 212, 0.25)", borderRadius: "0.5rem" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem" }}>
+            <div>
+              <div style={{ fontSize: "0.9rem", fontWeight: 700, color: "var(--accent-cyan)", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                <span>Visualização PyMOL (Publication-Ready)</span>
+                <span className="badge badge-cyan" style={{ fontSize: "0.65rem" }}>.PML Script</span>
+              </div>
+              <p style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginTop: "0.15rem" }}>
+                Gera script de renderização com sítio catalítico em sticks, peptídeo contrastante e contatos polares mapeados.
+              </p>
+            </div>
+
+            <div style={{ display: "flex", gap: "0.5rem" }}>
+              <button
+                onClick={() => setShowPymolCode(!showPymolCode)}
+                className="btn btn-secondary"
+                style={{ fontSize: "0.8rem", padding: "0.35rem 0.65rem" }}
+              >
+                <Code size={14} />
+                {showPymolCode ? "Ocultar Script" : "Inspecionar Script"}
+              </button>
+              <a
+                href={`${API_BASE}/results/${result.run_id}/${peptide.peptide_id}/pymol?download=true`}
+                download={`${peptide.peptide_id}_docking.pml`}
+                className="btn btn-primary"
+                style={{ fontSize: "0.8rem", padding: "0.35rem 0.75rem" }}
+              >
+                <Download size={14} />
+                Baixar .pml
+              </a>
+            </div>
+          </div>
+
+          {showPymolCode && pymolScript && (
+            <div style={{ marginTop: "0.75rem" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.3rem" }}>
+                <span style={{ fontSize: "0.7rem", color: "var(--text-muted)", textTransform: "uppercase" }}>Código do Script PyMOL</span>
+                <button
+                  onClick={handleCopyScript}
+                  className="btn btn-secondary"
+                  style={{ fontSize: "0.7rem", padding: "0.2rem 0.5rem" }}
+                >
+                  {copied ? <Check size={12} color="var(--accent-emerald)" /> : null}
+                  {copied ? "Copiado!" : "Copiar Código"}
+                </button>
+              </div>
+              <pre
+                className="mono"
+                style={{
+                  fontSize: "0.75rem",
+                  background: "#080c14",
+                  padding: "0.75rem",
+                  borderRadius: "0.375rem",
+                  border: "1px solid var(--border-color)",
+                  overflowX: "auto",
+                  maxHeight: "180px",
+                  color: "#e2e8f0",
+                }}
+              >
+                {pymolScript}
+              </pre>
+            </div>
+          )}
         </div>
 
         {/* Footer */}

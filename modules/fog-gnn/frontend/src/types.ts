@@ -128,3 +128,14 @@ export interface GraphResponse {
   fog_episode_graph: BodyGraph;
 }
 
+export interface ModelInfoResponse {
+  model_type: string;
+  pyg_available: boolean;
+  backend: string;
+  sensor_nodes_count: number;
+  validation_protocol: string;
+  rare_event_criterion: string;
+  canonical_sensors: string[];
+}
+
+

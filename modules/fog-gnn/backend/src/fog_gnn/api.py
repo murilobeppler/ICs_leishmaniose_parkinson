@@ -13,6 +13,7 @@ from fog_gnn.domain import Session, Subject
 from fog_gnn.evaluate import METHODOLOGY_NOTE, FogEvaluationMetrics
 from fog_gnn.graph import BodyGraph
 from fog_gnn.ingest import load_sessions, load_subjects
+from fog_gnn.models.pyg_st_gnn import is_pyg_installed
 from fog_gnn.synthetic import (
     DEFAULT_SYNTHETIC_EXPERIMENT_ID,
     generate_synthetic_imu_artifacts,
@@ -125,6 +126,7 @@ def create_app(settings: FogGnnSettings | None = None) -> FastAPI:
     @app.get("/health")
     def get_health() -> dict[str, Any]:
         subjects, sessions, experiments = ensure_module_b_data(cfg)
+        pyg_ok = is_pyg_installed()
         return {
             "status": "ok",
             "module": "fog-gnn",
@@ -132,7 +134,32 @@ def create_app(settings: FogGnnSettings | None = None) -> FastAPI:
             "sessions_count": len(sessions),
             "experiments_count": len(experiments),
             "default_experiment_id": experiments[0].experiment_id,
+            "pyg_available": pyg_ok,
+            "active_gnn_backend": "torch_geometric (PyG)" if pyg_ok else "vectorized_engine",
             "methodology_note": METHODOLOGY_NOTE,
+        }
+
+    @app.get("/model-info")
+    def get_model_info() -> dict[str, Any]:
+        pyg_ok = is_pyg_installed()
+        return {
+            "model_type": "Spatio-Temporal Graph Neural Network (ST-GNN)",
+            "pyg_available": pyg_ok,
+            "backend": "torch_geometric.nn.GCNConv + AdamW" if pyg_ok else "Vectorized Spatial GCN (NumPy/SciPy fallback)",
+            "sensor_nodes_count": len(cfg.fog_sampling_rate_hz and [
+                "left_ankle", "right_ankle", "left_thigh", "right_thigh", "trunk", "left_wrist", "right_wrist"
+            ]),
+            "validation_protocol": "Leave-One-Subject-Out (LOSO) Cross-Validation",
+            "rare_event_criterion": "Weighted BCEWithLogitsLoss (class-balanced for freezing episodes)",
+            "canonical_sensors": [
+                "Tornozelo Esquerdo",
+                "Tornozelo Direito",
+                "Coxa Esquerda",
+                "Coxa Direita",
+                "Tronco (Lombar L5)",
+                "Punho Esquerdo",
+                "Punho Direito",
+            ],
         }
 
     @app.get("/subjects", response_model=SubjectsResponse)

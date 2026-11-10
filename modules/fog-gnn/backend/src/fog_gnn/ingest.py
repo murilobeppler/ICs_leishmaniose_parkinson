@@ -146,4 +146,3 @@ def load_session_dataframe(
     parquet_path = dataset_dir / "sessions" / f"{session_id}.parquet"
     df = read_tabular(parquet_path)
     return validate_imu_dataframe(df, node_specs=specs)
-

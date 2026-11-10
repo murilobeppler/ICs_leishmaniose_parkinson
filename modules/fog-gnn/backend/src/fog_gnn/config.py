@@ -55,4 +55,3 @@ class FogGnnSettings(CoreSettings):
     def resolved_experiments_dir(self, create: bool = True) -> Path:
         path = resolve_data_path(self.fog_experiments_dir)
         return ensure_dir(path) if create else path
-

@@ -32,6 +32,7 @@ from fog_gnn.ingest import (
 )
 from fog_gnn.models.base import FogModel
 from fog_gnn.models.baseline import TemporalBaselineModel
+from fog_gnn.models.pyg_st_gnn import PyGSTGNNModel
 from fog_gnn.models.st_gnn import STGNNModel
 from fog_gnn.synthetic import build_synthetic_subjects_and_sessions
 from fog_gnn.train import load_experiment, run_loso_experiment
@@ -187,6 +188,32 @@ def test_loso_experiment_st_gnn_vs_baseline_and_metrics(tmp_path: Path) -> None:
     assert 0.0 <= ev_metrics.sensitivity <= 1.0
 
 
+def test_pyg_st_gnn_model_conformance() -> None:
+    pyg_model = PyGSTGNNModel(force_fallback=True)
+    assert isinstance(pyg_model, FogModel)
+    assert pyg_model.uses_graph_topology is True
+    assert "pyg_st_gnn" in pyg_model.name
+
+    _, sessions, frames = build_synthetic_subjects_and_sessions(
+        sampling_rate_hz=50,
+        duration_seconds=12.0,
+        seed=42,
+    )
+    windows = segment_session_windows(
+        frames[sessions[0].session_id],
+        sampling_rate_hz=50,
+        window_size_seconds=2.0,
+        window_stride_seconds=1.0,
+    )
+    graph = build_body_graph(windows)
+    fit_res = pyg_model.fit(windows, graph, seed=42)
+    assert "train_loss" in fit_res
+
+    probs = pyg_model.predict_proba(windows, graph)
+    assert len(probs) == len(windows)
+    assert np.all(probs >= 0.0) and np.all(probs <= 1.0)
+
+
 def test_fastapi_endpoints_on_synthetic_imu(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -200,6 +227,13 @@ def test_fastapi_endpoints_on_synthetic_imu(
     health = client.get("/health")
     assert health.status_code == 200
     assert health.json()["subjects_count"] == 6
+    assert "pyg_available" in health.json()
+    assert "active_gnn_backend" in health.json()
+
+    model_info = client.get("/model-info")
+    assert model_info.status_code == 200
+    assert "pyg_available" in model_info.json()
+    assert model_info.json()["validation_protocol"].startswith("Leave-One-Subject-Out")
 
     subj_resp = client.get("/subjects")
     assert subj_resp.status_code == 200
