@@ -39,6 +39,11 @@ artifacts/
 *.pickle
 *.joblib
 
+# Exceção para o CSV de screening do HPEPDOCK em resources/
+!modules/peptide-docking/backend/resources/hpepdock_screen_real.csv
+
+
+
 # Estruturas biomoleculares e trajetórias (Módulo A)
 *.pdb
 *.pdbqt

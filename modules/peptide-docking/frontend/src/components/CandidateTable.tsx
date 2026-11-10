@@ -43,7 +43,8 @@ export function CandidateTable({ candidates, onSelectCandidate }: CandidateTable
           <tr>
             <th>Rank</th>
             <th>ID Peptídeo</th>
-            <th>Família / Origem</th>
+            <th>Sequência</th>
+            <th>Grupo / Origem</th>
             <th>Tamanho</th>
             <th>Carga (pH 7.4)</th>
             <th>GRAVY</th>
@@ -78,6 +79,20 @@ export function CandidateTable({ candidates, onSelectCandidate }: CandidateTable
                   <strong className="mono" style={{ color: "var(--text-primary)" }}>
                     {c.peptide.peptide_id}
                   </strong>
+                </td>
+                <td>
+                  <code
+                    style={{
+                      background: "rgba(148, 163, 184, 0.12)",
+                      padding: "0.2rem 0.45rem",
+                      borderRadius: "0.25rem",
+                      fontWeight: 700,
+                      letterSpacing: "0.06em",
+                      color: isHigh ? "var(--accent-emerald)" : "#f8fafc",
+                    }}
+                  >
+                    {c.peptide.sequence}
+                  </code>
                 </td>
                 <td>
                   <span style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>

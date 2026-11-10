@@ -159,9 +159,9 @@ export default function PeptideDockingPage() {
               maxWidth: "860px",
             }}
           >
-            Pipeline automatizado de docking molecular de <strong>634 peptídeos candidatos</strong>{" "}
-            contra a proteína-alvo de <em>Leishmania</em> sem ortólogo humano, com rastreabilidade
-            de hiperparâmetros, ranking multifatorial e inspeção de contatos atômicos.
+            Triagem virtual e ranking multifatorial de peptídeos candidatos ancorados contra o sítio
+            catalítico redox-ativo da Tripanotiona Redutase de <em>Leishmania</em> (alvo seletivo sem ortólogo humano),
+            com scores oficiais do servidor <strong>HPEPDOCK</strong>, visualização de contatos e exportação PyMOL.
           </p>
         </div>
 

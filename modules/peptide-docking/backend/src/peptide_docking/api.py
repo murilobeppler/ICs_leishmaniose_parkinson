@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, ConfigDict, Field
+
+from ic_core.io import write_json
 
 from peptide_docking.config import EngineChoice, PeptideDockingSettings
 from peptide_docking.domain import (
@@ -21,9 +24,11 @@ from peptide_docking.engines.base import DockingEngine
 from peptide_docking.engines.hpepdock import HPEPDOCKEngine
 from peptide_docking.engines.mock import MockDockingEngine
 from peptide_docking.library import (
+    build_real_hpepdock_run,
     build_synthetic_peptide_library,
     build_synthetic_target,
     load_peptide_library,
+    load_real_hpepdock_screen,
     load_target,
     save_peptide_library,
     save_target,
@@ -43,7 +48,7 @@ from peptide_docking.ranking import (
 )
 from peptide_docking.visualization.pymol_export import generate_pymol_script
 
-DEFAULT_BASELINE_RUN_ID: str = "run_baseline_mock_seed42"
+DEFAULT_BASELINE_RUN_ID: str = "run_hpepdock_screen_real"
 
 
 class PeptidesResponse(BaseModel):
@@ -86,7 +91,7 @@ class TriggerRunRequest(BaseModel):
 def ensure_module_a_data(
     settings: PeptideDockingSettings,
 ) -> tuple[list[Peptide], Target, list[DockingRunManifest]]:
-    """Garante que a biblioteca sintética de 634 peptídeos, o alvo e a run base existam."""
+    """Garante que a biblioteca de peptídeos (real ou sintética), o alvo e a run base existam."""
     lib_path = settings.resolved_library_path(must_exist=False)
     target_path = settings.resolved_target_path(must_exist=False)
     runs_dir = settings.resolved_runs_dir(create=True)
@@ -94,6 +99,34 @@ def ensure_module_a_data(
     if not target_path.exists():
         save_target(build_synthetic_target(), target_path)
     target = load_target(target_path)
+
+    # Verifica se há o CSV oficial de triagem com scores reais do HPEPDOCK
+    backend_root = Path(__file__).resolve().parent.parent
+    real_csv_path = backend_root / "resources" / "hpepdock_screen_real.csv"
+    if not real_csv_path.exists():
+        real_csv_path = backend_root / "data" / "hpepdock_screen_real.csv"
+
+    if real_csv_path.exists():
+        peptides, scores_map = load_real_hpepdock_screen(real_csv_path)
+        save_peptide_library(peptides, lib_path)
+
+        real_run_dir = runs_dir / DEFAULT_BASELINE_RUN_ID
+        manifest_file = real_run_dir / "manifest.json"
+        results_file = real_run_dir / "results.json"
+
+        if not manifest_file.exists() or not results_file.exists():
+            manifest, results = build_real_hpepdock_run(
+                peptides=peptides,
+                scores_map=scores_map,
+                target=target,
+                run_id=DEFAULT_BASELINE_RUN_ID,
+            )
+            real_run_dir.mkdir(parents=True, exist_ok=True)
+            write_json(manifest.model_dump(), manifest_file)
+            write_json([r.model_dump() for r in results], results_file)
+
+        manifests = list_runs(runs_dir)
+        return peptides, target, manifests
 
     if not lib_path.exists():
         peptides = build_synthetic_peptide_library(
@@ -115,7 +148,7 @@ def ensure_module_a_data(
             peptides=peptides,
             target=target,
             seed=settings.ic_random_seed,
-            run_id=DEFAULT_BASELINE_RUN_ID,
+            run_id="run_baseline_mock_seed42",
             parameters={
                 "receptor_flexibility": "semi-flexible-pocket",
                 "exhaustiveness": 8,
