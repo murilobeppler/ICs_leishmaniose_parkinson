@@ -127,3 +127,4 @@ export interface GraphResponse {
   normal_gait_graph: BodyGraph;
   fog_episode_graph: BodyGraph;
 }
+
